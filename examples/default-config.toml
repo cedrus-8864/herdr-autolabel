@@ -1,0 +1,34 @@
+# Pane Topic Sync -- configuration
+#
+# Copy to your plugin config dir to customize:
+#   ~/.config/herdr/plugins/config/dan.pane-topic-sync/config.toml
+# (find it with: herdr plugin config-dir dan.pane-topic-sync)
+#
+# All keys are optional; omitted keys use the defaults shown below.
+
+# Independently enable naming of panes and tabs.
+sync_panes = true
+sync_tabs  = true
+
+# Which pane's topic names a multi-pane tab:
+#   "first"  = the top-left pane (reading order)
+#   "active" = the pane you last focused *within that tab* (herdr tracks this
+#              per tab, so it does not jump around with your global cursor)
+# Single-pane tabs use that pane either way.
+tab_source = "first"
+
+# Truncate labels longer than this (an ellipsis is appended). Applied AFTER
+# formatting, so it caps the final label including any prefix.
+max_label_length = 60
+
+# Label templates. Tokens are substituted; unknown tokens are left literal.
+#   {topic}     the agent's live topic (terminal_title_stripped)
+#   {agent}     the agent name (e.g. "claude")
+#   {workspace} the workspace label
+#   {n}         tab switch number within its workspace (TABS ONLY)
+#
+# Examples:
+#   tab_format  = "{n}· {topic}"     -> "1· Fix the parser bug"
+#   pane_format = "{agent}: {topic}"      -> "claude: Fix the parser bug"
+tab_format  = "{topic}"
+pane_format = "{topic}"

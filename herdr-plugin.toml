@@ -1,0 +1,49 @@
+id = "dan.pane-topic-sync"
+name = "Pane Topic Sync"
+version = "0.1.0"
+min_herdr_version = "0.7.0"
+description = "Rename each agent pane to its live topic (terminal_title_stripped) and name each tab after its first pane's topic."
+platforms = ["macos", "linux"]
+
+# Manual trigger, e.g. `herdr plugin action invoke dan.pane-topic-sync.sync`
+[[actions]]
+id = "sync"
+title = "Sync pane + tab topics"
+contexts = ["workspace", "tab", "pane"]
+command = ["bun", "sync-labels.js"]
+
+# Re-sync on anything that could change a pane's topic, its agent, or the layout.
+# NOTE: deliberately NOT subscribing to *.renamed — our own renames must not re-trigger us.
+[[events]]
+on = "workspace.focused"
+command = ["bun", "sync-labels.js"]
+
+[[events]]
+on = "tab.focused"
+command = ["bun", "sync-labels.js"]
+
+[[events]]
+on = "pane.focused"
+command = ["bun", "sync-labels.js"]
+
+[[events]]
+on = "pane.created"
+command = ["bun", "sync-labels.js"]
+
+[[events]]
+on = "pane.closed"
+command = ["bun", "sync-labels.js"]
+
+[[events]]
+on = "pane.moved"
+command = ["bun", "sync-labels.js"]
+
+[[events]]
+on = "pane.agent_detected"
+command = ["bun", "sync-labels.js"]
+
+# The important one: fires when an agent flips idle<->working, which is when
+# Claude sets a fresh topic for the task it just started.
+[[events]]
+on = "pane.agent_status_changed"
+command = ["bun", "sync-labels.js"]
