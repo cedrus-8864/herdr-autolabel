@@ -22,7 +22,7 @@ Plain (non-agent) shell panes are left untouched.
   fires when an agent flips idle↔working — i.e. when it sets a fresh topic.
 - Deliberately does **not** subscribe to `*.renamed` events, so its own renames
   can't feed back into a loop.
-- Gates all writes through a state file (`$HERDR_PLUGIN_STATE_DIR/pane-topic-sync-state.json`),
+- Gates all writes through a state file (`$HERDR_PLUGIN_STATE_DIR/autolabel-state.json`),
   so `rename` is only called when a topic actually changed — no churn.
 - "First pane" is resolved from `herdr pane layout` rect coordinates, sorted by
   `(y, x)`, so it's the visually top-left pane regardless of split order.

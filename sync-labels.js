@@ -18,7 +18,7 @@ import { basename, dirname, join } from "node:path";
 const herdr = process.env.HERDR_BIN_PATH || "herdr";
 const stateDir = process.env.HERDR_PLUGIN_STATE_DIR || "/tmp";
 const configDir = process.env.HERDR_PLUGIN_CONFIG_DIR || "";
-const statePath = join(stateDir, "pane-topic-sync-state.json");
+const statePath = join(stateDir, "autolabel-state.json");
 
 // ---------------------------------------------------------------------------
 // Config
@@ -114,8 +114,10 @@ function normalize(value) {
     .trim();
 }
 
+// Truncate by code points so an emoji at the boundary is never split.
 function cap(str, max) {
-  return str.length > max ? `${str.slice(0, max - 1).trimEnd()}…` : str;
+  const chars = [...str];
+  return chars.length > max ? `${chars.slice(0, max - 1).join("").trimEnd()}…` : str;
 }
 
 // Replace {token}s from `tokens`; unknown tokens are left literal.
