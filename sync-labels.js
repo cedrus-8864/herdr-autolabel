@@ -13,7 +13,7 @@
 
 import { spawnSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 
 const herdr = process.env.HERDR_BIN_PATH || "herdr";
 const stateDir = process.env.HERDR_PLUGIN_STATE_DIR || "/tmp";
@@ -29,8 +29,8 @@ const DEFAULTS = {
   sync_tabs: true,         // rename tabs to a pane's topic
   tab_source: "first",     // "first" (top-left) | "active" (tab's focused pane)
   max_label_length: 60,    // truncate longer labels with an ellipsis
-  tab_format: "{topic}",   // tokens: {topic} {agent} {n} {workspace}
-  pane_format: "{topic}",  // tokens: {topic} {agent} {workspace}
+  tab_format: "{topic}",   // tokens: {topic} {agent} {n} {workspace} {cwd}
+  pane_format: "{topic}",  // tokens: {topic} {agent} {workspace} {cwd}
 };
 
 // Minimal flat-TOML reader: key = value, one per line. Values may be quoted
@@ -155,7 +155,7 @@ function main() {
   for (const p of panes) {
     if (!p.agent) continue;
     const topic = normalize(p.terminal_title_stripped);
-    if (topic) info.set(p.pane_id, { topic, agent: p.agent });
+    if (topic) info.set(p.pane_id, { topic, agent: p.agent, cwd: p.cwd ? basename(p.cwd) : "" });
   }
 
   // Group panes by tab (list order).
@@ -189,7 +189,7 @@ function main() {
       const meta = info.get(p.pane_id);
       if (!meta) continue;
       const label = cap(
-        applyFormat(cfg.pane_format, { topic: meta.topic, agent: meta.agent, workspace: wsLabel(p.workspace_id) }),
+        applyFormat(cfg.pane_format, { topic: meta.topic, agent: meta.agent, cwd: meta.cwd, workspace: wsLabel(p.workspace_id) }),
         cfg.max_label_length,
       );
       nextPanes[p.pane_id] = label;
@@ -229,6 +229,7 @@ function main() {
         applyFormat(cfg.tab_format, {
           topic: meta.topic,
           agent: meta.agent,
+          cwd: meta.cwd,
           n: orderInWs.get(tabId) ?? "",
           workspace: wsLabel(wsId),
         }),

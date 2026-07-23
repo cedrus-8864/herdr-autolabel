@@ -66,11 +66,13 @@ documented set. Summary:
 | `sync_tabs` | `true` | Rename tabs. |
 | `tab_source` | `"first"` | Which pane names a multi-pane tab: `"first"` (top-left) or `"active"` (the pane you last focused *within that tab* — herdr tracks this per tab). |
 | `max_label_length` | `60` | Truncate longer labels (applied after formatting). |
-| `tab_format` | `"{topic}"` | Template; tokens `{topic}` `{agent}` `{workspace}` `{n}` (tab switch number). |
-| `pane_format` | `"{topic}"` | Template; tokens `{topic}` `{agent}` `{workspace}`. |
+| `tab_format` | `"{topic}"` | Template; tokens `{topic}` `{agent}` `{workspace}` `{cwd}` `{n}` (tab switch number). |
+| `pane_format` | `"{topic}"` | Template; tokens `{topic}` `{agent}` `{workspace}` `{cwd}`. |
 
 Examples: `tab_format = "{n}· {topic}"` keeps the tab switch number;
-`pane_format = "{agent}: {topic}"` prefixes the agent name.
+`pane_format = "{agent}: {topic}"` prefixes the agent name;
+`tab_format = "{cwd} — {topic}"` prefixes the directory name (basename of the
+source pane's working directory).
 
 ### A note on manual renames
 

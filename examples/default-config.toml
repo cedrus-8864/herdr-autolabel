@@ -25,10 +25,12 @@ max_label_length = 60
 #   {topic}     the agent's live topic (terminal_title_stripped)
 #   {agent}     the agent name (e.g. "claude")
 #   {workspace} the workspace label
+#   {cwd}       basename of the pane's working directory (e.g. "my-project")
 #   {n}         tab switch number within its workspace (TABS ONLY)
 #
 # Examples:
 #   tab_format  = "{n}· {topic}"     -> "1· Fix the parser bug"
 #   pane_format = "{agent}: {topic}"      -> "claude: Fix the parser bug"
+#   tab_format  = "{cwd} — {topic}"  -> "my-project — Fix the parser bug"
 tab_format  = "{topic}"
 pane_format = "{topic}"
