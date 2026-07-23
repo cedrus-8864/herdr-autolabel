@@ -6,9 +6,9 @@ what each agent is actually working on — no more tabs labeled `1`, `2`, `3`.
 On every relevant herdr event it:
 
 1. **Renames each agent pane** to its live topic — the `terminal_title_stripped`
-   that Claude Code (and other agents) emit via the terminal title. With
-   `show_agent_labels_on_pane_borders = true` in your herdr config, that topic
-   shows right on the pane border.
+   that Claude Code (and other agents) emit via the terminal title. A pane name
+   shows on the pane border. (herdr can do this natively — see
+   [Overlap with herdr's built-in config](#overlap-with-herdrs-built-in-config).)
 2. **Renames each tab** to the topic of its **first pane** (top-left, reading
    order). If the first pane is a plain shell, the first *agent* pane's topic is
    used instead, so a tab is never named after a shell prompt.
@@ -39,13 +39,6 @@ herdr server reload-config
 
 Requires [bun](https://bun.sh) on `PATH` (herdr runs `bun sync-labels.js`).
 
-To see topics on pane borders too, add to `~/.config/herdr/config.toml`:
-
-```toml
-[ui]
-show_agent_labels_on_pane_borders = true
-```
-
 ## Manual sync / debugging
 
 ```sh
@@ -73,6 +66,25 @@ Examples: `tab_format = "{n}· {topic}"` keeps the tab switch number;
 `pane_format = "{agent}: {topic}"` prefixes the agent name;
 `tab_format = "{cwd} — {topic}"` prefixes the directory name (basename of the
 source pane's working directory).
+
+### Overlap with herdr's built-in config
+
+herdr ≥ 0.7 can already surface an agent's topic in two of the three places this
+plugin writes to, without any plugin. Only the **tab bar** has no config for it —
+that is the plugin's real reason to exist.
+
+| Where | herdr config | Plugin needed? |
+|-------|--------------|----------------|
+| Agents sidebar | `[ui.sidebar.agents] rows` — use the `terminal_title_stripped` token | No |
+| Pane border | `[ui] show_agent_labels_on_pane_borders = true` | No |
+| Tab bar | *(nothing)* | Yes — `sync_tabs` |
+
+The pane case is worth a closer look: the native flag only applies *when no
+manual pane name is set*, and `sync_panes` sets one. So turning `sync_panes` on
+replaces herdr's always-live label with one this plugin has to keep fresh — if
+the plugin stops running, the border goes stale instead of falling back. Prefer
+`sync_panes = false` unless you need a `pane_format` herdr can't express (e.g.
+`"{agent}: {topic}"` or a `{cwd}` prefix).
 
 ### A note on manual renames
 
