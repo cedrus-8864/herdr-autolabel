@@ -49,14 +49,14 @@ show_agent_labels_on_pane_borders = true
 ## Manual sync / debugging
 
 ```sh
-herdr plugin action invoke dan.pane-topic-sync.sync
-herdr plugin log list --plugin dan.pane-topic-sync --limit 5
+herdr plugin action invoke dan.autolabel.sync
+herdr plugin log list --plugin dan.autolabel --limit 5
 ```
 
 ## Configuration
 
 Optional. Drop a `config.toml` in the plugin's config dir (find it with
-`herdr plugin config-dir dan.pane-topic-sync`). All keys are optional; see
+`herdr plugin config-dir dan.autolabel`). All keys are optional; see
 [`examples/default-config.toml`](examples/default-config.toml) for the full
 documented set. Summary:
 

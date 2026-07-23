@@ -1,8 +1,8 @@
 # Pane Topic Sync -- configuration
 #
 # Copy to your plugin config dir to customize:
-#   ~/.config/herdr/plugins/config/dan.pane-topic-sync/config.toml
-# (find it with: herdr plugin config-dir dan.pane-topic-sync)
+#   ~/.config/herdr/plugins/config/dan.autolabel/config.toml
+# (find it with: herdr plugin config-dir dan.autolabel)
 #
 # All keys are optional; omitted keys use the defaults shown below.
 
