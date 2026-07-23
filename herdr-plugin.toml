@@ -1,8 +1,8 @@
 id = "cedrus.autolabel"
-name = "Pane Topic Sync"
+name = "Autolabel"
 version = "0.1.0"
 min_herdr_version = "0.7.0"
-description = "Rename each agent pane to its live topic (terminal_title_stripped) and name each tab after its first pane's topic."
+description = "Auto-name agent panes and tabs after each agent's live topic, via configurable format templates."
 platforms = ["macos", "linux"]
 
 # Manual trigger, e.g. `herdr plugin action invoke cedrus.autolabel.sync`

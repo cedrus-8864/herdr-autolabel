@@ -1,4 +1,4 @@
-# Pane Topic Sync
+# herdr-autolabel
 
 A [herdr](https://herdr.dev) plugin that auto-names your panes and tabs after
 what each agent is actually working on — no more tabs labeled `1`, `2`, `3`.
@@ -9,9 +9,14 @@ On every relevant herdr event it:
    that Claude Code (and other agents) emit via the terminal title. A pane name
    shows on the pane border. (herdr can do this natively — see
    [Overlap with herdr's built-in config](#overlap-with-herdrs-built-in-config).)
-2. **Renames each tab** to the topic of its **first pane** (top-left, reading
-   order). If the first pane is a plain shell, the first *agent* pane's topic is
-   used instead, so a tab is never named after a shell prompt.
+2. **Renames each tab** to the topic of one of its panes — by default the
+   **first** one (top-left, reading order); `tab_source = "active"` uses the pane
+   you last focused in that tab instead. If the chosen pane is a plain shell, the
+   first *agent* pane's topic is used, so a tab is never named after a shell
+   prompt.
+
+Both labels go through a format template, so a tab can read
+`3 · my-api · claude` and its pane `my-api · Fix the parser bug`.
 
 Plain (non-agent) shell panes are left untouched.
 
@@ -22,8 +27,10 @@ Plain (non-agent) shell panes are left untouched.
   fires when an agent flips idle↔working — i.e. when it sets a fresh topic.
 - Deliberately does **not** subscribe to `*.renamed` events, so its own renames
   can't feed back into a loop.
-- Gates all writes through a state file (`$HERDR_PLUGIN_STATE_DIR/autolabel-state.json`),
-  so `rename` is only called when a topic actually changed — no churn.
+- Only calls `rename` when a label actually changed — no churn. Tabs compare
+  against the live label from `herdr tab list`; pane labels aren't in `pane list`,
+  so those are remembered in a state file
+  (`$HERDR_PLUGIN_STATE_DIR/autolabel-state.json`).
 - "First pane" is resolved from `herdr pane layout` rect coordinates, sorted by
   `(y, x)`, so it's the visually top-left pane regardless of split order.
 
@@ -32,8 +39,8 @@ Plain (non-agent) shell panes are left untouched.
 Local (development):
 
 ```sh
-git clone <this-repo> ~/repos/herdr-pane-topic-sync
-herdr plugin link ~/repos/herdr-pane-topic-sync
+git clone https://github.com/cedrus-8864/herdr-autolabel ~/repos/herdr-autolabel
+herdr plugin link ~/repos/herdr-autolabel
 herdr server reload-config
 ```
 
@@ -85,6 +92,21 @@ replaces herdr's always-live label with one this plugin has to keep fresh — if
 the plugin stops running, the border goes stale instead of falling back. Prefer
 `sync_panes = false` unless you need a `pane_format` herdr can't express (e.g.
 `"{agent}: {topic}"` or a `{cwd}` prefix).
+
+Sidebar rows have no `cwd` token, and the `tab` token drags in whatever prefix
+your `tab_format` has (`{n}` is useful in the tab bar, noise in the sidebar). The
+pane label sidesteps both — with `pane_format = "{cwd} · {topic}"`:
+
+```toml
+[ui.sidebar.agents]
+rows = [
+  ["state_icon", { token = "pane", fg = "#cdd6f4", bold = true, dim = false }],
+  [{ token = "workspace", fg = "#6c7086", dim = true }, { token = "agent", fg = "#6c7086", dim = true }],
+]
+```
+
+Brightness comes from `fg`; `bold`/`dim` alone won't override a token's
+contextual default color.
 
 ### A note on manual renames
 

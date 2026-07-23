@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 //
-// Pane Topic Sync -- herdr plugin
+// herdr-autolabel -- herdr plugin
 //
 // On each subscribed event, walk every pane in the session and:
 //   1. rename each *agent* pane to its live topic (terminal_title_stripped)
