@@ -17,7 +17,7 @@ Plain (non-agent) shell panes are left untouched.
 
 ## How it works
 
-- Subscribes to `pane.*` / `tab.focused` / `workspace.focused` events (see
+- Subscribes to `pane.*` / `tab.focused` / `tab.moved` / `workspace.focused` events (see
   `herdr-plugin.toml`). The key trigger is `pane.agent_status_changed`, which
   fires when an agent flips idle↔working — i.e. when it sets a fresh topic.
 - Deliberately does **not** subscribe to `*.renamed` events, so its own renames

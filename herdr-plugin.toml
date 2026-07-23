@@ -38,6 +38,11 @@ command = ["bun", "sync-labels.js"]
 on = "pane.moved"
 command = ["bun", "sync-labels.js"]
 
+# Tab reorders shift the {n} of every following tab; no loop risk (we never move tabs).
+[[events]]
+on = "tab.moved"
+command = ["bun", "sync-labels.js"]
+
 [[events]]
 on = "pane.agent_detected"
 command = ["bun", "sync-labels.js"]
