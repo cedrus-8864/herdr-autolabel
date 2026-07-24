@@ -23,8 +23,12 @@ Plain (non-agent) shell panes are left untouched.
 ## How it works
 
 - Subscribes to `pane.*` / `tab.focused` / `tab.moved` / `workspace.focused` events (see
-  `herdr-plugin.toml`). The key trigger is `pane.agent_status_changed`, which
-  fires when an agent flips idle↔working — i.e. when it sets a fresh topic.
+  `herdr-plugin.toml`). `pane.agent_status_changed` fires when an agent flips
+  idle↔working; `pane.updated` catches a fresh topic set *without* a status flip;
+  `pane.exited` fires when an agent session ends, so the tab can revert.
+- When a tab's last agent session ends, its label is restored to whatever it was
+  before the plugin first renamed it (remembered in the state file) — herdr
+  exposes no way to recompute a tab's default, so the plugin captures it.
 - Deliberately does **not** subscribe to `*.renamed` events, so its own renames
   can't feed back into a loop.
 - Only calls `rename` when a label actually changed — no churn. Tabs compare

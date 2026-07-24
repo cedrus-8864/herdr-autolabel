@@ -132,9 +132,9 @@ function applyFormat(fmt, tokens) {
 function loadState() {
   try {
     const s = JSON.parse(readFileSync(statePath, "utf8"));
-    return { panes: s.panes || {} };
+    return { panes: s.panes || {}, tabs: s.tabs || {} };
   } catch {
-    return { panes: {} };
+    return { panes: {}, tabs: {} };
   }
 }
 
@@ -184,6 +184,7 @@ function main() {
   let tabWrites = 0;
   const state = loadState();
   const nextPanes = {};
+  const nextTabs = {};
 
   // 1) Panes.
   if (cfg.sync_panes) {
@@ -225,26 +226,45 @@ function main() {
           if (info.has(p.pane_id)) { meta = info.get(p.pane_id); break; }
         }
       }
-      if (!meta) continue;
-      const wsId = tabPanes[0].workspace_id;
-      const label = cap(
-        applyFormat(cfg.tab_format, {
-          topic: meta.topic,
-          agent: meta.agent,
-          cwd: meta.cwd,
-          n: orderInWs.get(tabId) ?? "",
-          workspace: wsLabel(wsId),
-        }),
-        cfg.max_label_length,
-      );
-      if (tabLabel.get(tabId) !== label) {
-        run(["tab", "rename", tabId, label]);
-        tabWrites++;
+      const live = tabLabel.get(tabId);
+      const owned = state.tabs[tabId];
+
+      if (meta) {
+        const wsId = tabPanes[0].workspace_id;
+        const label = cap(
+          applyFormat(cfg.tab_format, {
+            topic: meta.topic,
+            agent: meta.agent,
+            cwd: meta.cwd,
+            n: orderInWs.get(tabId) ?? "",
+            workspace: wsLabel(wsId),
+          }),
+          cfg.max_label_length,
+        );
+        // Remember the tab's pre-plugin label so it can be restored once the
+        // agent goes away -- herdr exposes no way to recompute its default.
+        const original = owned ? owned.original : live;
+        if (live !== label) {
+          run(["tab", "rename", tabId, label]);
+          tabWrites++;
+        }
+        nextTabs[tabId] = { original, set: label };
+      } else if (owned && live === owned.set) {
+        // Agent gone and our label is still showing -> restore the original.
+        // Drop ownership (leave it out of nextTabs) so we re-capture next time.
+        if (live !== owned.original) {
+          run(["tab", "rename", tabId, owned.original]);
+          tabWrites++;
+        }
       }
+      // else: never touched, or manually renamed since -> leave it alone.
     }
+  } else {
+    // Preserve prior state so toggling sync_tabs back on can still restore.
+    Object.assign(nextTabs, state.tabs);
   }
 
-  saveState({ panes: nextPanes });
+  saveState({ panes: nextPanes, tabs: nextTabs });
   console.log(
     `synced: ${paneWrites} pane rename(s), ${tabWrites} tab rename(s) ` +
     `[panes=${cfg.sync_panes} tabs=${cfg.sync_tabs} source=${cfg.tab_source}]`,

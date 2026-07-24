@@ -34,6 +34,19 @@ command = ["bun", "sync-labels.js"]
 on = "pane.closed"
 command = ["bun", "sync-labels.js"]
 
+# Fires when a pane's info changes — including the terminal title (topic) an
+# agent sets *without* flipping idle<->working. Without this, a fresh topic
+# isn't picked up until the next unrelated event.
+[[events]]
+on = "pane.updated"
+command = ["bun", "sync-labels.js"]
+
+# Fires when a pane's process exits — i.e. an agent session ends and the pane
+# drops back to a shell. Lets us restore the tab's pre-agent label.
+[[events]]
+on = "pane.exited"
+command = ["bun", "sync-labels.js"]
+
 [[events]]
 on = "pane.moved"
 command = ["bun", "sync-labels.js"]
