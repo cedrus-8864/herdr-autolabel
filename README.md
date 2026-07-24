@@ -16,7 +16,7 @@ On every relevant herdr event it:
    prompt.
 
 Both labels go through a format template, so a tab can read
-`3 · my-api · claude` and its pane `my-api · Fix the parser bug`.
+`3 · my-api · claude` and its pane `▸ my-api` (the `▸` marking the focused pane).
 
 Plain (non-agent) shell panes are left untouched.
 
@@ -40,7 +40,9 @@ Plain (non-agent) shell panes are left untouched.
   and `pane list` report the live label, so that's what the comparison uses. The
   state file (`$HERDR_PLUGIN_STATE_DIR/autolabel-state.json`) records which
   labels are the plugin's own, so a label you set by hand is never overwritten
-  or cleared.
+  or cleared. A `pane_format` using `{focus}` is the one case that writes on
+  plain navigation: each focus change renames two panes (the one you left, the
+  one you entered) and nothing else.
 - "First pane" is resolved from `herdr pane layout` rect coordinates, sorted by
   `(y, x)`, so it's the visually top-left pane regardless of split order.
 
@@ -82,12 +84,16 @@ documented set. Summary:
 | `tab_source` | `"first"` | Which pane names a multi-pane tab: `"first"` (top-left) or `"active"` (the pane you last focused *within that tab* — herdr tracks this per tab). |
 | `max_label_length` | `60` | Truncate longer labels (applied after formatting). |
 | `tab_format` | `"{topic}"` | Template; tokens `{topic}` `{agent}` `{workspace}` `{cwd}` `{n}` (tab switch number). |
-| `pane_format` | `"{topic}"` | Template; tokens `{topic}` `{agent}` `{workspace}` `{cwd}`. |
+| `pane_format` | `"{topic}"` | Template; tokens `{topic}` `{agent}` `{workspace}` `{cwd}` `{focus}`. |
 
 Examples: `tab_format = "{n}· {topic}"` keeps the tab switch number;
 `pane_format = "{agent}: {topic}"` prefixes the agent name;
 `tab_format = "{cwd} — {topic}"` prefixes the directory name (basename of the
 source pane's working directory).
+
+`{focus}` expands to `▸ ` on the focused pane and to nothing everywhere else —
+a text stand-in for the focus highlight herdr's agent rows don't have (see
+below). It is a pane token only: a tab has no single focused pane.
 
 ### Overlap with herdr's built-in config
 
@@ -97,7 +103,7 @@ that is the plugin's real reason to exist.
 
 | Where | herdr config | Plugin needed? |
 |-------|--------------|----------------|
-| Agents sidebar | `[ui.sidebar.agents] rows` — use the `terminal_title_stripped` token | No |
+| Agents sidebar | `[ui.sidebar.agents] rows` — use the `terminal_title_stripped` token | No (unless you want cwd or a focus cue — see below) |
 | Pane border | `[ui] show_agent_labels_on_pane_borders = true` | No |
 | Tab bar | *(nothing)* | Yes — `sync_tabs` |
 
@@ -105,23 +111,42 @@ The pane case is worth a closer look: the native flag only applies *when no
 manual pane name is set*, and `sync_panes` sets one. So turning `sync_panes` on
 replaces herdr's always-live label with one this plugin has to keep fresh — if
 the plugin stops running, the border goes stale instead of falling back. Prefer
-`sync_panes = false` unless you need a `pane_format` herdr can't express (e.g.
-`"{agent}: {topic}"` or a `{cwd}` prefix).
+`sync_panes = false` unless you want the sidebar arrangement below, or need a
+`pane_format` herdr can't express (e.g. `"{agent}: {topic}"`).
 
 Sidebar rows have no `cwd` token, and the `tab` token drags in whatever prefix
 your `tab_format` has (`{n}` is useful in the tab bar, noise in the sidebar). The
-pane label sidesteps both — with `pane_format = "{cwd} · {topic}"`:
+pane label sidesteps both — with `pane_format = "{focus}{cwd}"`:
 
 ```toml
 [ui.sidebar.agents]
 rows = [
-  ["state_icon", { token = "pane", fg = "#cdd6f4", bold = true, dim = false }],
-  [{ token = "workspace", fg = "#6c7086", dim = true }, { token = "agent", fg = "#6c7086", dim = true }],
+  ["state_icon", { token = "pane", fg = "#cdd6f4", bold = true }],
+  [{ token = "agent", dim = true }, { token = "terminal_title_stripped", dim = true }],
 ]
 ```
 
-Brightness comes from `fg`; `bold`/`dim` alone won't override a token's
-contextual default color.
+Note what that `pane_format` leaves out: the topic. Row 2 already renders
+`terminal_title_stripped` for every agent, including agents in tabs you can't
+see — whereas a pane border is on screen only when its pane is, right next to
+the transcript it summarises. So the border carries what the sidebar can't
+(cwd, focus cue) and nothing the sidebar already has.
+
+Two sidebar limits on 0.7.5 that this arrangement works around, both worth
+knowing before you try something more direct:
+
+- **Agent rows have no focus highlight.** A token's style is `{ token, fg, bold,
+  dim }` with no focused/unfocused variant, and the defaults are per-token-kind,
+  not per-row-state — deleting `fg` does not reveal a contextual color, the
+  focused agent's row simply renders like every other. (The spaces list *does*
+  highlight its focused entry; the asymmetry is herdr's, not a config mistake.)
+  Hence `{focus}`.
+- **Custom tokens can't be styled.** herdr accepts `$name` tokens fed by
+  `pane report-metadata --token name=…`, which would supply cwd without touching
+  the pane name — but they render only as a bare string. The styled form
+  `{ token = "$cwd", … }` passes `herdr config check` and then renders nothing,
+  so a custom token is stuck with a dimmer default. That is the whole reason
+  row 1 goes through the pane label instead.
 
 ### A note on manual renames
 

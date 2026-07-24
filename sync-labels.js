@@ -17,6 +17,9 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 
 const herdr = process.env.HERDR_BIN_PATH || "herdr";
+// What {focus} expands to on the focused pane. herdr's agent rows have no focus
+// highlight of their own, so the cue has to live in the label text.
+const focusMarker = "▸ ";
 const stateDir = process.env.HERDR_PLUGIN_STATE_DIR || "/tmp";
 const configDir = process.env.HERDR_PLUGIN_CONFIG_DIR || "";
 const statePath = join(stateDir, "autolabel-state.json");
@@ -31,7 +34,7 @@ const DEFAULTS = {
   tab_source: "first",     // "first" (top-left) | "active" (tab's focused pane)
   max_label_length: 60,    // truncate longer labels with an ellipsis
   tab_format: "{topic}",   // tokens: {topic} {agent} {n} {workspace} {cwd}
-  pane_format: "{topic}",  // tokens: {topic} {agent} {workspace} {cwd}
+  pane_format: "{topic}",  // tokens: {topic} {agent} {workspace} {cwd} {focus}
 };
 
 // Minimal flat-TOML reader: key = value, one per line. Values may be quoted
@@ -205,7 +208,13 @@ function main() {
         continue;
       }
       const label = cap(
-        applyFormat(cfg.pane_format, { topic: meta.topic, agent: meta.agent, cwd: meta.cwd, workspace: wsLabel(p.workspace_id) }),
+        applyFormat(cfg.pane_format, {
+          topic: meta.topic,
+          agent: meta.agent,
+          cwd: meta.cwd,
+          focus: p.focused ? focusMarker : "",
+          workspace: wsLabel(p.workspace_id),
+        }),
         cfg.max_label_length,
       );
       nextPanes[p.pane_id] = label;
