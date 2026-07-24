@@ -24,17 +24,23 @@ Plain (non-agent) shell panes are left untouched.
 
 - Subscribes to `pane.*` / `tab.focused` / `tab.moved` / `workspace.focused` events (see
   `herdr-plugin.toml`). `pane.agent_status_changed` fires when an agent flips
-  idle↔working; `pane.updated` catches a fresh topic set *without* a status flip;
-  `pane.exited` fires when an agent session ends, so the tab can revert.
-- When a tab's last agent session ends, its label is restored to whatever it was
-  before the plugin first renamed it (remembered in the state file) — herdr
-  exposes no way to recompute a tab's default, so the plugin captures it.
+  idle↔working; `pane.exited` fires when an agent session ends, so the tab can
+  revert. A topic that changes *without* a status flip has no hook of its own on
+  herdr 0.7.5 (`pane.updated` is rejected as a plugin event), so it's picked up
+  on the next focus or agent-status event.
+- When an agent session ends, the label this plugin set is reverted. A pane goes
+  back to herdr's default via `pane rename --clear`. A tab has no such flag, so
+  the plugin restores the label it captured before its first rename — and if
+  that label was herdr's positional default (a bare number), it re-derives the
+  number from the tab's *current* position, since tabs may have moved or closed
+  in between.
 - Deliberately does **not** subscribe to `*.renamed` events, so its own renames
   can't feed back into a loop.
-- Only calls `rename` when a label actually changed — no churn. Tabs compare
-  against the live label from `herdr tab list`; pane labels aren't in `pane list`,
-  so those are remembered in a state file
-  (`$HERDR_PLUGIN_STATE_DIR/autolabel-state.json`).
+- Only calls `rename` when a label actually changed — no churn. Both `tab list`
+  and `pane list` report the live label, so that's what the comparison uses. The
+  state file (`$HERDR_PLUGIN_STATE_DIR/autolabel-state.json`) records which
+  labels are the plugin's own, so a label you set by hand is never overwritten
+  or cleared.
 - "First pane" is resolved from `herdr pane layout` rect coordinates, sorted by
   `(y, x)`, so it's the visually top-left pane regardless of split order.
 
@@ -55,7 +61,12 @@ Requires [bun](https://bun.sh) on `PATH` (herdr runs `bun sync-labels.js`).
 ```sh
 herdr plugin action invoke cedrus.autolabel.sync
 herdr plugin log list --plugin cedrus.autolabel --limit 5
+bun test
 ```
+
+Invoke the action rather than running `bun sync-labels.js` by hand — herdr passes
+`HERDR_PLUGIN_CONFIG_DIR`, and without it the run falls back to the default
+formats and relabels every tab.
 
 ## Configuration
 

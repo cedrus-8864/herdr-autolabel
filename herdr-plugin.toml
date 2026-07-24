@@ -34,12 +34,11 @@ command = ["bun", "sync-labels.js"]
 on = "pane.closed"
 command = ["bun", "sync-labels.js"]
 
-# Fires when a pane's info changes — including the terminal title (topic) an
-# agent sets *without* flipping idle<->working. Without this, a fresh topic
-# isn't picked up until the next unrelated event.
-[[events]]
-on = "pane.updated"
-command = ["bun", "sync-labels.js"]
+# A topic change with no idle<->working flip has no hook to catch it: herdr
+# 0.7.5 emits `pane.updated` on the events API but rejects it (and
+# `pane.output_changed`) as a plugin event -- `herdr plugin list` reports
+# "unknown event" and never invokes us. Until herdr accepts it, a fresh topic
+# lands on the next focus / agent-status event instead.
 
 # Fires when a pane's process exits — i.e. an agent session ends and the pane
 # drops back to a shell. Lets us restore the tab's pre-agent label.

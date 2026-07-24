@@ -7,9 +7,10 @@
 //   2. rename each tab to the topic of a chosen pane (see `tab_source`)
 //
 // Plain (non-agent) shell panes are ignored so a tab never gets named after a
-// shell prompt. Pane writes are gated through a state file so we only call
-// `rename` when a label actually changed -- no churn, and (combined with not
-// subscribing to *.renamed events) no feedback loop.
+// shell prompt. Writes are gated on the live label so we only call `rename`
+// when it actually changed -- no churn, and (combined with not subscribing to
+// *.renamed events) no feedback loop. When an agent exits, the pane/tab label
+// this plugin set is reverted.
 
 import { spawnSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -126,7 +127,10 @@ function applyFormat(fmt, tokens) {
 }
 
 // ---------------------------------------------------------------------------
-// State (pane labels only -- `pane list` omits the label field)
+// State
+//
+// Records which labels are *ours*, so a label the user set by hand is never
+// overwritten or cleared. Change detection reads the live label instead.
 // ---------------------------------------------------------------------------
 
 function loadState() {
@@ -190,13 +194,22 @@ function main() {
   if (cfg.sync_panes) {
     for (const p of panes) {
       const meta = info.get(p.pane_id);
-      if (!meta) continue;
+      const owned = state.panes[p.pane_id];
+      if (!meta) {
+        // Agent gone and our label is still showing -> back to herdr's default.
+        // Drop ownership (leave it out of nextPanes) so we re-capture next time.
+        if (owned && p.label === owned) {
+          run(["pane", "rename", p.pane_id, "--clear"]);
+          paneWrites++;
+        }
+        continue;
+      }
       const label = cap(
         applyFormat(cfg.pane_format, { topic: meta.topic, agent: meta.agent, cwd: meta.cwd, workspace: wsLabel(p.workspace_id) }),
         cfg.max_label_length,
       );
       nextPanes[p.pane_id] = label;
-      if (state.panes[p.pane_id] !== label) {
+      if (p.label !== label) {
         run(["pane", "rename", p.pane_id, label]);
         paneWrites++;
       }
@@ -252,8 +265,9 @@ function main() {
       } else if (owned && live === owned.set) {
         // Agent gone and our label is still showing -> restore the original.
         // Drop ownership (leave it out of nextTabs) so we re-capture next time.
-        if (live !== owned.original) {
-          run(["tab", "rename", tabId, owned.original]);
+        const restore = restoreTabLabel(owned.original, orderInWs.get(tabId));
+        if (live !== restore) {
+          run(["tab", "rename", tabId, restore]);
           tabWrites++;
         }
       }
@@ -271,6 +285,16 @@ function main() {
   );
 }
 
+// What to write back when a tab's agent goes away.
+//
+// herdr's default tab label is its 1-based position, recomputed as tabs move --
+// but `tab rename` has no --clear, so restoring means writing a literal string,
+// which pins it. Re-derive that number from the tab's *current* position;
+// anything else was a real name the user chose, so put it back verbatim.
+export function restoreTabLabel(original, position) {
+  return /^\d+$/.test(original) && position ? String(position) : original;
+}
+
 // Which pane's topic represents a tab, per config.
 //   "active" -> the tab's own focused pane (herdr tracks this per tab)
 //   "first"  -> top-left pane in reading order
@@ -284,9 +308,11 @@ function sourcePaneId(tabPanes, source) {
   return sorted[0].pane_id;
 }
 
-try {
-  main();
-} catch (err) {
-  console.error(err instanceof Error ? err.message : String(err));
-  process.exit(1);
+if (import.meta.main) {
+  try {
+    main();
+  } catch (err) {
+    console.error(err instanceof Error ? err.message : String(err));
+    process.exit(1);
+  }
 }
