@@ -20,6 +20,10 @@ const herdr = process.env.HERDR_BIN_PATH || "herdr";
 // What {focus} expands to on the focused pane. herdr's agent rows have no focus
 // highlight of their own, so the cue has to live in the label text.
 const focusMarker = "▸ ";
+// Padding for the other panes, so the marker does not shift the focused row's
+// label out of the sidebar's label column. Must render the same width as
+// focusMarker. U+2800 (braille blank), not a space: herdr trims labels.
+const unfocusedMarker = "⠀⠀";
 const stateDir = process.env.HERDR_PLUGIN_STATE_DIR || "/tmp";
 const configDir = process.env.HERDR_PLUGIN_CONFIG_DIR || "";
 const statePath = join(stateDir, "autolabel-state.json");
@@ -212,7 +216,7 @@ function main() {
           topic: meta.topic,
           agent: meta.agent,
           cwd: meta.cwd,
-          focus: p.focused ? focusMarker : "",
+          focus: p.focused ? focusMarker : unfocusedMarker,
           workspace: wsLabel(p.workspace_id),
         }),
         cfg.max_label_length,

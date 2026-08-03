@@ -91,9 +91,12 @@ Examples: `tab_format = "{n}· {topic}"` keeps the tab switch number;
 `tab_format = "{cwd} — {topic}"` prefixes the directory name (basename of the
 source pane's working directory).
 
-`{focus}` expands to `▸ ` on the focused pane and to nothing everywhere else —
-a text stand-in for the focus highlight herdr's agent rows don't have (see
-below). It is a pane token only: a tab has no single focused pane.
+`{focus}` expands to `▸ ` on the focused pane and to two blank cells everywhere
+else — a text stand-in for the focus highlight herdr's agent rows don't have
+(see below). Both arms are the same width so the marker doesn't push the focused
+row's label out of the sidebar's label column. The padding is U+2800 (braille
+blank) rather than spaces, which herdr trims off a label. It is a pane token
+only: a tab has no single focused pane.
 
 ### Overlap with herdr's built-in config
 

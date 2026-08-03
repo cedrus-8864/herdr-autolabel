@@ -26,14 +26,15 @@ max_label_length = 60
 #   {agent}     the agent name (e.g. "claude")
 #   {workspace} the workspace label
 #   {cwd}       basename of the pane's working directory (e.g. "my-project")
-#   {focus}     "▸ " on the focused pane, empty elsewhere (PANES ONLY) --
-#               herdr's agent sidebar rows have no focus highlight of their own
+#   {focus}     "▸ " on the focused pane, two blank cells elsewhere so labels
+#               stay aligned (PANES ONLY) -- herdr's agent sidebar rows have no
+#               focus highlight of their own
 #   {n}         tab switch number within its workspace (TABS ONLY)
 #
 # Examples:
 #   tab_format  = "{n}· {topic}"     -> "1· Fix the parser bug"
 #   pane_format = "{agent}: {topic}"      -> "claude: Fix the parser bug"
 #   tab_format  = "{cwd} — {topic}"  -> "my-project — Fix the parser bug"
-#   pane_format = "{focus}{cwd}"     -> "▸ my-project" (focused) / "my-project"
+#   pane_format = "{focus}{cwd}"     -> "▸ my-project" (focused) / "  my-project"
 tab_format  = "{topic}"
 pane_format = "{topic}"
