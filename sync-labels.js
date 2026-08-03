@@ -24,6 +24,14 @@ const focusMarker = "▸ ";
 // label out of the sidebar's label column. Must render the same width as
 // focusMarker. U+2800 (braille blank), not a space: herdr trims labels.
 const unfocusedMarker = "⠀⠀";
+const SOURCE = "autolabel";
+// Blank cells prefixed to the `topic` metadata token, so a sidebar row holding
+// `$topic` alone starts under the first row's label instead of under its number.
+// Same U+2800 as above, and it must be applied AFTER normalize() -- that strips
+// a leading braille run to drop agent spinners, and would eat this too.
+// ponytail: width fixed for a ["$num", "state_icon", "pane"] first row. Make it
+// a config key if a second layout ever needs a different offset.
+const topicPad = "⠀".repeat(6);
 const stateDir = process.env.HERDR_PLUGIN_STATE_DIR || "/tmp";
 const configDir = process.env.HERDR_PLUGIN_CONFIG_DIR || "";
 const statePath = join(stateDir, "autolabel-state.json");
@@ -191,6 +199,19 @@ function main() {
     return wsCache.get(id);
   };
 
+  // The `$topic` sidebar token. Display-only metadata, so it needs no ownership
+  // state: nothing else writes it, and it is cleared the moment the topic goes.
+  // Deliberately outside `sync_panes`, which governs entity *names*, not this.
+  let tokenWrites = 0;
+  for (const p of panes) {
+    const topic = info.get(p.pane_id)?.topic;
+    const value = topic ? topicPad + topic : null;
+    if ((p.tokens?.topic ?? null) === value) continue;
+    const flags = value === null ? ["--clear-token", "topic"] : ["--token", `topic=${value}`];
+    run(["pane", "report-metadata", p.pane_id, "--source", SOURCE, ...flags]);
+    tokenWrites++;
+  }
+
   let paneWrites = 0;
   let tabWrites = 0;
   const state = loadState();
@@ -293,7 +314,8 @@ function main() {
 
   saveState({ panes: nextPanes, tabs: nextTabs });
   console.log(
-    `synced: ${paneWrites} pane rename(s), ${tabWrites} tab rename(s) ` +
+    `synced: ${paneWrites} pane rename(s), ${tabWrites} tab rename(s), ` +
+    `${tokenWrites} topic token(s) ` +
     `[panes=${cfg.sync_panes} tabs=${cfg.sync_tabs} source=${cfg.tab_source}]`,
   );
 }

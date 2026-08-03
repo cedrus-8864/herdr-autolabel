@@ -98,6 +98,34 @@ row's label out of the sidebar's label column. The padding is U+2800 (braille
 blank) rather than spaces, which herdr trims off a label. It is a pane token
 only: a tab has no single focused pane.
 
+### `$topic` — a second sidebar row with no separator in it
+
+The plugin also publishes each agent's topic as a `topic` metadata token, so a
+sidebar row can render it as `$topic`:
+
+```toml
+[ui.sidebar.agents]
+rows = [["$num", "state_icon", "pane"], ["$topic"]]
+```
+
+The point is what that row *doesn't* have. herdr joins two tokens with `" · "`,
+so any row built from two tokens carries a visible separator, and herdr also
+indents an entry's second row by 2 columns — which lands the topic under the
+number instead of under the label. A single token has nothing to separate, and
+the token's value carries 6 leading blank cells to make up the indent, so the
+topic sits directly beneath the label with nothing in front of it.
+
+The trade against the built-in `terminal_title_stripped` token: that one is
+always live, while this one refreshes on the plugin's events (see *When it
+runs*), and a custom `$` token can't take `dim`/`fg` — herdr renders it in the
+custom-token default. Use `terminal_title_stripped` unless you specifically want
+the bare row.
+
+The padding is U+2800 (braille blank), not spaces, which herdr trims off a token
+value. Its width is fixed for a `["$num", "state_icon", "pane"]` first row —
+`topicPad` in `sync-labels.js` if yours differs. Ignore the token and nothing
+changes.
+
 ### Overlap with herdr's built-in config
 
 herdr ≥ 0.7 can already surface an agent's topic in two of the three places this

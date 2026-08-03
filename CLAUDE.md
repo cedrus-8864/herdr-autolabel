@@ -31,6 +31,12 @@ and `HERDR_PLUGIN_STATE_DIR`; without them the run silently falls back to defaul
 re-reads the whole world (`herdr pane list`, `herdr tab list` as JSON via `spawnSync`), diffs, writes,
 exits. There is no in-memory state between runs — only the JSON state file.
 
+It writes **two kinds of output, and they must not be confused**: entity *names* (`pane rename` /
+`tab rename`, governed by `sync_panes` / `sync_tabs`, needing ownership state to revert safely) and a
+display-only `topic` **metadata token** for `$topic` in sidebar rows. The token needs no ownership
+state — nothing else writes it and it is cleared the moment the topic goes — and it is deliberately
+outside the `sync_panes` branch, which governs names only.
+
 Three interlocking mechanisms make that safe; changing any one of them can break the others:
 
 1. **No feedback loop.** `herdr-plugin.toml` deliberately does not subscribe to `*.renamed` events.
@@ -59,6 +65,13 @@ Other constraints worth knowing before changing behavior:
   docs in `examples/default-config.toml`, and a row in the README table.
 - Format tokens are substituted by `applyFormat()`; unknown `{tokens}` are left literal. Truncation
   (`cap()`) runs *after* formatting and counts code points, not UTF-16 units.
+- **Blank padding is U+2800 (braille blank), never a space** — herdr trims a label or token value and
+  drops what's left if it is empty. Both `unfocusedMarker` and `topicPad` rely on this, and `topicPad`
+  must be applied *after* `normalize()`: that strips a leading braille run to drop agent spinners, so
+  normalizing a padded string would eat the padding.
+- **Never pad `display_agent` or `title` to fix a sidebar column.** They look like display-only
+  channels but are *shared* — pane borders and other plugins' notifiers read them. Only the
+  `--token k=v` bag is private to the sidebar row that names it.
 
 ## Repo conventions
 
